@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Extension YouTube</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+        max-width: 640px;
+        margin: 4rem auto;
+        padding: 0 1.5rem;
+        color: #0f172a;
+      }
+      h1 {
+        font-size: 2rem;
+        margin-bottom: 0.25rem;
+      }
+      p {
+        margin-top: 0;
+        color: #475569;
+      }
+      form {
+        margin-top: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      label {
+        font-weight: 600;
+      }
+      input[type="password"],
+      input[type="text"] {
+        padding: 0.9rem 1rem;
+        border-radius: 999px;
+        border: 1px solid #cbd5f5;
+        font-size: 1rem;
+      }
+      button {
+        align-self: flex-start;
+        border: none;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #f43f5e, #f97316);
+        color: #fff;
+        font-weight: 700;
+        padding: 0.85rem 1.8rem;
+        cursor: pointer;
+      }
+      .status {
+
+
+    font-size: 0.95rem;
+   min-height: 1.2rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Google Gemini API Key</h1>
+      <p>Store your key locally so the extension can ask Gemini whether YouTube deserves your time.</p>
+    </header>
+
+    <form id="options-form">
+      <label for="gemini-key">Gemini API Key</label>
+      <input id="gemini-key" type="password" name="gemini-key" placeholder="Api key goes here" autocomplete="off" required />
+      <small>Keys are saved with Chrome sync storage and never leave your browser.</small>
+      <button type="submit">Save</button>
+      <div class="status" id="status" aria-live="polite"></div>
+    </form>
+
+    <footer style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0; font-size: 0.85rem; color: #64748b; text-align: center;">
+      Made by Will · <a href="https://github.com/Will10145" target="_blank" rel="noopener" style="color: #f97316; text-decoration: none;">github.com/Will10145</a>
+    </footer>
+
+    <script src="options.js"></script>
+  </body>
+</html>
