@@ -1,40 +1,16 @@
-# Do You Really Need To Open This?
+# YouTube Reasoner: Do you _really_ need to do that time wasting doom-scroll?
+A chrome extension designed to cure addictions by asking you for a valid reason, powered by Gemini API!
 
-A Chrome extension that intercepts every YouTube visit, forces a reflective pause, and sends your justification to the Google Gemini API. Gemini either approves the reason or nudges you to step away.
+![A screenshot of YouTube Reasoner](https://static.willcodes.tech/r/Flavortown_Shots.png)
 
-## Requirements
+## Usage:
+* Go to [The Releases Page](https://github.com/Will10145/YouTube-Reasoner/releases)
+* Download the latest .crx or source code file
+* Navigate to chrome://extensions, turn on developer mode then drag and drop either of these files
 
-- Google Gemini API key with access to the Generative Language REST API.
-- Chrome 114+ (any Chromium browser that supports Manifest V3 should work).
+Get an API key from [Google AI Studio](https://aistudio.google.com/) and copy it, then paste it into the extension
 
-## Setup
+Thanks for trying this out! Feel free to leave issues in the [issues](https://github.com/Will10145/YouTube-Reasoner/issues). 
+Contributions are welcome!
 
-1. **Clone or download** this repository.
-2. **Enable developer mode** in `chrome://extensions`.
-3. **Load unpacked** and select this folder.
-4. **Open the extension options page** (Details → Extension options).
-5. **Paste your Gemini API key** and save.
-6. If the modal later says "Add your Gemini API key", click the inline "extension options page" link in the prompt or revisit the options page from Chrome's Extensions screen and re-save your key.
-
-## How It Works
-
-- `content.js` injects a full-screen modal whenever a YouTube page loads or the SPA navigation changes.
-- After you submit a reason, `background.js` forwards it to Gemini using the `gemini-1.5-flash` model and expects a JSON verdict.
-- Responses with `decision: "allow"` let you continue; anything else keeps YouTube blocked until you give a stronger reason or leave.
-
-## Customization Ideas
-
-- Tweak `styles/modal.css` for a different mood.
-- Adjust the decision guidelines inside `buildGeminiPayload()` if you prefer a stricter or more lenient guardian.
-- Replace the fallback redirect URL in `content.js` with your favorite distraction-free site.
-
-## Testing Tips
-
-- Use the Chrome DevTools console on YouTube to watch any `console.error` messages coming from the content script.
-- Inspect `chrome://extensions` → "Service Worker" console for Gemini API responses and potential network issues.
-- If Gemini keeps rejecting valid reasons, log the raw response in `background.js` to tune the system prompt.
-
-## Security Notes
-
-- Keys are stored only in Chrome's `storage.sync` area and are never sent anywhere except Google's Gemini API endpoint.
-- Consider creating a dedicated Gemini API key with restricted quotas for this extension.
+This was made for Hackclubs [FlavorTown](https://flavortown.hackclub.com/)
