@@ -36,5 +36,5 @@ A Chrome extension that intercepts every YouTube visit, forces a reflective paus
 
 ## Security Notes
 
-- Keys are stored only in Chrome's `storage.sync` area and are never sent anywhere except Google’s Gemini API endpoint.
+- Keys are stored only in Chrome's `storage.sync` area and are never sent anywhere except Google's Gemini API endpoint.
 - Consider creating a dedicated Gemini API key with restricted quotas for this extension.
