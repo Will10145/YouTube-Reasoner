@@ -26,6 +26,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message?.type === "open-stats-page") {
+    chrome.tabs.create({ url: chrome.runtime.getURL("stats.html") }, (tab) => {
+      if (chrome.runtime.lastError) {
+        console.error("Unable to open stats page", chrome.runtime.lastError);
+        sendResponse({ error: chrome.runtime.lastError.message });
+        return;
+      }
+      sendResponse({ opened: true });
+    });
+
+    return true;
+  }
+
   return false;
 });
 

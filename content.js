@@ -6,6 +6,9 @@ const OPTIONS_BUTTON_ID = "dyrnt-options";
 const OPTIONS_LINK_ID = "dyrnt-options-inline";
 const BLOCKED_UNTIL_KEY = "dyrntBlockedUntil";
 const APPROVED_UNTIL_KEY = "dyrntApprovedUntil";
+const STATS_KEY = "dyrntStats";
+const HISTORY_KEY = "dyrntHistory";
+const MAX_HISTORY_ITEMS = 50;
 const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 let activeOverlay = null;
 let lastPromptedUrl = "";
@@ -78,6 +81,7 @@ function buildModal() {
         <button type="submit" class="dyrnt-primary">Convince Gemini</button>
         <button type="button" class="dyrnt-secondary" id="dyrnt-abort">Never mind, take me away</button>
         <button type="button" class="dyrnt-tertiary" id="${OPTIONS_BUTTON_ID}" hidden>Open Gemini settings</button>
+        <button type="button" class="dyrnt-tertiary" id="dyrnt-stats">📊 Stats</button>
       </div>
       <p id="${STATUS_ID}" aria-live="polite" class="dyrnt-status">Awaiting your reason...</p>
     </form>
@@ -93,6 +97,7 @@ function buildModal() {
   const status = document.getElementById(STATUS_ID);
   const abortButton = document.getElementById("dyrnt-abort");
   const optionsButton = document.getElementById(OPTIONS_BUTTON_ID);
+  const statsButton = document.getElementById("dyrnt-stats");
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -122,6 +127,7 @@ function buildModal() {
         status.textContent = response.message || "Gemini approved. Carry on.";
         const approvedUntil = Date.now() + COOLDOWN_MS;
         await setApprovedUntil(approvedUntil);
+        await recordStat("approved", reason, response.message);
         setTimeout(() => {
           destroyModal();
         }, 650);
@@ -129,6 +135,7 @@ function buildModal() {
         status.textContent = response.message || "Gemini rejected this justification.";
         const blockedUntil = Date.now() + COOLDOWN_MS;
         await setBlockedUntil(blockedUntil);
+        await recordStat("rejected", reason, response.message);
         setTimeout(() => {
           showCooldownTimer(blockedUntil);
         }, 1500);
@@ -148,6 +155,7 @@ function buildModal() {
     status.textContent = "Honorable exit. Well done!";
     const blockedUntil = Date.now() + COOLDOWN_MS;
     await setBlockedUntil(blockedUntil);
+    await recordStat("aborted", "", "User chose to leave YouTube");
     setTimeout(() => {
       showCooldownTimer(blockedUntil);
     }, 600);
@@ -156,6 +164,19 @@ function buildModal() {
   if (optionsButton) {
     optionsButton.addEventListener("click", () => {
       openOptionsPage(status);
+    });
+  }
+
+  if (statsButton) {
+    statsButton.addEventListener("click", () => {
+      chrome.runtime.sendMessage({ type: "open-stats-page" }, (response) => {
+        if (chrome.runtime.lastError || response?.error) {
+          console.error("Unable to open stats page", chrome.runtime.lastError || response?.error);
+          // Fallback: open in new tab
+          window.open(chrome.runtime.getURL("stats.html"), "_blank");
+          return;
+        }
+      });
     });
   }
 }
@@ -260,6 +281,9 @@ function setApprovedUntil(timestamp) {
 }
 
 function showCooldownTimer(blockedUntil) {
+  // Remove blur class before replacing content
+  document.body.classList.remove("dyrnt-blur");
+  
   // Stop the nav watcher so it doesn't interfere
   if (navWatcher) {
     clearInterval(navWatcher);
@@ -469,5 +493,68 @@ function showCooldownTimer(blockedUntil) {
 
   continueBtn.addEventListener("click", () => {
     location.reload();
+  });
+}
+
+// Stats tracking functions
+async function recordStat(result, reason = "", message = "") {
+  // Update stats
+  const stats = await getStats();
+  stats.totalPrompts = (stats.totalPrompts || 0) + 1;
+  
+  if (result === "approved") {
+    stats.totalApproved = (stats.totalApproved || 0) + 1;
+  } else if (result === "rejected") {
+    stats.totalRejected = (stats.totalRejected || 0) + 1;
+  } else if (result === "aborted") {
+    stats.totalAborted = (stats.totalAborted || 0) + 1;
+  }
+  
+  await saveStats(stats);
+  
+  // Add to history
+  const history = await getHistory();
+  history.unshift({
+    timestamp: Date.now(),
+    result,
+    reason,
+    message
+  });
+  
+  // Keep only the most recent items
+  const trimmedHistory = history.slice(0, MAX_HISTORY_ITEMS);
+  await saveHistory(trimmedHistory);
+}
+
+function getStats() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get([STATS_KEY], (items) => {
+      resolve(items[STATS_KEY] || {
+        totalPrompts: 0,
+        totalApproved: 0,
+        totalRejected: 0,
+        totalAborted: 0
+      });
+    });
+  });
+}
+
+function saveStats(stats) {
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ [STATS_KEY]: stats }, resolve);
+  });
+}
+
+function getHistory() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get([HISTORY_KEY], (items) => {
+      resolve(items[HISTORY_KEY] || []);
+    });
+  });
+}
+
+function saveHistory(history) {
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ [HISTORY_KEY]: history }, resolve);
   });
 }

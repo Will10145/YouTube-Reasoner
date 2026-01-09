@@ -14,3 +14,5 @@ Thanks for trying this out! Feel free to leave issues in the [issues](https://gi
 Contributions are welcome!
 
 This was made for Hackclubs [FlavorTown](https://flavortown.hackclub.com/)
+
+Like my project? Please follow it on [Flavortime](https://flavortown.hackclub.com/projects/6677)
