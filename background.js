@@ -1,5 +1,7 @@
-const MODEL_NAME = "gemini-2.5-flash-lite";
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent`;
+const GEMINI_MODEL = "gemini-2.5-flash-lite";
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+const HACKCLUB_API_URL = "https://ai.hackclub.com/proxy/v1/chat/completions";
+const HACKCLUB_MODEL = "google/gemini-2.5-flash";
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.type === "evaluate-reason") {
@@ -48,13 +50,21 @@ async function handleEvaluation(reason) {
     throw new Error("A meaningful reason is required.");
   }
 
-  const apiKey = await getGeminiKey();
+  const { apiKey, aiService } = await getSettings();
   if (!apiKey) {
-    throw new Error("Add your Gemini API key in the extension options page.");
+    throw new Error("Add your API key in the extension options page.");
   }
 
-  const payload = buildGeminiPayload(trimmed);
-  const response = await fetch(`${API_URL}?key=${apiKey}`, {
+  if (aiService === "hackclub") {
+    return await callHackclubAI(trimmed, apiKey);
+  } else {
+    return await callGeminiAPI(trimmed, apiKey);
+  }
+}
+
+async function callGeminiAPI(reason, apiKey) {
+  const payload = buildGeminiPayload(reason);
+  const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -69,6 +79,26 @@ async function handleEvaluation(reason) {
 
   const data = await response.json();
   return interpretGeminiDecision(data);
+}
+
+async function callHackclubAI(reason, apiKey) {
+  const payload = buildHackclubPayload(reason);
+  const response = await fetch(HACKCLUB_API_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errorMessage = await safeRead(response);
+    throw new Error(`Hackclub AI error (${response.status}): ${errorMessage}`);
+  }
+
+  const data = await response.json();
+  return interpretHackclubDecision(data);
 }
 
 function buildGeminiPayload(reason) {
@@ -102,6 +132,29 @@ function buildGeminiPayload(reason) {
   };
 }
 
+function buildHackclubPayload(reason) {
+  const systemPrompt = "You vet whether someone truly needs to open YouTube. Approve only if the reason is intentional, time-boxed, and purposeful. Reject vague, impulsive, or entertainment-only reasons. Always respond with minified JSON containing decision (allow|deny) and message (short guidance).";
+  
+  return {
+    model: HACKCLUB_MODEL,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: `Reason provided:\n${reason}\n\nRespond only with JSON.` }
+    ]
+  };
+}
+
+async function getSettings() {
+  return new Promise((resolve) => {
+    chrome.storage.sync.get(["geminiApiKey", "aiService"], (items) => {
+      resolve({
+        apiKey: items.geminiApiKey || null,
+        aiService: items.aiService || "gemini"
+      });
+    });
+  });
+}
+
 async function getGeminiKey() {
   return new Promise((resolve) => {
     chrome.storage.sync.get(["geminiApiKey"], (items) => {
@@ -127,6 +180,27 @@ function interpretGeminiDecision(data) {
   const decision = String(parsed.decision || "").toLowerCase();
   const allow = decision === "allow";
   const message = parsed.message || parsed.summary || "Gemini responded without guidance.";
+
+  return { allow, message };
+}
+
+function interpretHackclubDecision(data) {
+  const raw = data?.choices?.[0]?.message?.content || "";
+  if (!raw) {
+    throw new Error("Hackclub AI returned an empty response.");
+  }
+
+  const parsed = tryParseJson(raw);
+  if (!parsed) {
+    return {
+      allow: raw.toLowerCase().includes("allow") && !raw.toLowerCase().includes("deny"),
+      message: raw
+    };
+  }
+
+  const decision = String(parsed.decision || "").toLowerCase();
+  const allow = decision === "allow";
+  const message = parsed.message || parsed.summary || "AI responded without guidance.";
 
   return { allow, message };
 }

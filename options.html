@@ -30,11 +30,13 @@
         font-weight: 600;
       }
       input[type="password"],
-      input[type="text"] {
+      input[type="text"],
+      select {
         padding: 0.9rem 1rem;
         border-radius: 999px;
         border: 1px solid #cbd5f5;
         font-size: 1rem;
+        background: #fff;
       }
       button {
         align-self: flex-start;
@@ -56,14 +58,20 @@
   </head>
   <body>
     <header>
-      <h1>Google Gemini API Key</h1>
-      <p>Store your key locally so the extension can ask Gemini whether YouTube deserves your time.</p>
+      <h1>AI Service Settings</h1>
+      <p>Store your key locally so the extension can ask AI whether YouTube deserves your time.</p>
       <p style="margin-top: 1rem;"><a href="stats.html" style="color: #f97316; text-decoration: none; font-weight: 600;">📊 View Your Stats</a></p>
     </header>
 
     <form id="options-form">
-      <label for="gemini-key">Gemini API Key</label>
-      <input id="gemini-key" type="password" name="gemini-key" placeholder="Api key goes here" autocomplete="off" required />
+      <label for="ai-service">AI Service</label>
+      <select id="ai-service" name="ai-service">
+        <option value="gemini">Gemini (Direct API)</option>
+        <option value="hackclub">Hackclub AI</option>
+      </select>
+
+      <label for="gemini-key">API Key</label>
+      <input id="gemini-key" type="password" name="gemini-key" placeholder="API key goes here" autocomplete="off" required />
       <small>Keys are saved with Chrome sync storage and never leave your browser.</small>
       <button type="submit">Save</button>
       <div class="status" id="status" aria-live="polite"></div>

@@ -150,3 +150,39 @@ body.dyrnt-blur > *:not(#dyrnt-overlay) {
 .dyrnt-footer a:hover {
   text-decoration: underline;
 }
+
+/* Floating settings button */
+#dyrnt-floating-settings {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 999998;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #f43f5e, #f97316);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.4);
+  transition: transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+  opacity: 0.7;
+}
+
+#dyrnt-floating-settings:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(244, 63, 94, 0.5);
+  opacity: 1;
+}
+
+#dyrnt-floating-settings svg {
+  width: 20px;
+  height: 20px;
+}
+
+body.dyrnt-blur #dyrnt-floating-settings {
+  display: none;
+}

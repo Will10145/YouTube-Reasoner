@@ -4,6 +4,7 @@ const FORM_ID = "dyrnt-form";
 const INPUT_ID = "dyrnt-reason";
 const OPTIONS_BUTTON_ID = "dyrnt-options";
 const OPTIONS_LINK_ID = "dyrnt-options-inline";
+const FLOATING_SETTINGS_ID = "dyrnt-floating-settings";
 const BLOCKED_UNTIL_KEY = "dyrntBlockedUntil";
 const APPROVED_UNTIL_KEY = "dyrntApprovedUntil";
 const STATS_KEY = "dyrntStats";
@@ -25,6 +26,10 @@ async function bootstrapIntervention() {
   document.documentElement.dataset.dyrntInjected = "true";
   lastPromptedUrl = location.href;
 
+  // Always add the floating settings button and start the watcher
+  createFloatingSettingsButton();
+  startNavigationWatcher();
+
   // Check if user is currently approved (Gemini said yes recently)
   const approvedUntil = await getApprovedUntil();
   if (approvedUntil && Date.now() < approvedUntil) {
@@ -39,7 +44,6 @@ async function bootstrapIntervention() {
   }
 
   enforcePrompt();
-  startNavigationWatcher();
 }
 
 function enforcePrompt() {
@@ -55,6 +59,9 @@ function startNavigationWatcher() {
   }
   // YouTube is single-page; poll for URL changes to re-trigger the prompt.
   navWatcher = setInterval(() => {
+    // Ensure floating settings button persists
+    createFloatingSettingsButton();
+    
     if (location.href === lastPromptedUrl) {
       return;
     }
@@ -204,11 +211,12 @@ function isMissingApiKeyMessage(message) {
   if (!message) {
     return false;
   }
-  return message.toLowerCase().includes("gemini api key");
+  const lower = message.toLowerCase();
+  return lower.includes("api key") || lower.includes("apikey");
 }
 
 function promptForApiKey(statusNode, form, optionsButton) {
-  statusNode.innerHTML = `Add your Gemini API key via the <button type="button" id="${OPTIONS_LINK_ID}" class="dyrnt-inline-link">extension options page</button> first.`;
+  statusNode.innerHTML = `Add your API key via the <button type="button" id="${OPTIONS_LINK_ID}" class="dyrnt-inline-link">extension options page</button> first.`;
   attachInlineOptionsHandler(statusNode);
   toggleFormDisabled(form, false);
   if (!optionsButton) {
@@ -235,15 +243,43 @@ function attachInlineOptionsHandler(statusNode) {
 }
 
 function openOptionsPage(statusNode) {
-  statusNode.textContent = "Opening extension options...";
+  if (statusNode) {
+    statusNode.textContent = "Opening extension options...";
+  }
   chrome.runtime.sendMessage({ type: "open-options-page" }, (response) => {
     if (chrome.runtime.lastError || response?.error) {
       console.error("Unable to open options page", chrome.runtime.lastError || response?.error);
-      statusNode.textContent = "Open the options page from chrome://extensions → Details.";
+      if (statusNode) {
+        statusNode.textContent = "Open the options page from chrome://extensions → Details.";
+      }
       return;
     }
-    statusNode.textContent = "Options page opened in a new tab.";
+    if (statusNode) {
+      statusNode.textContent = "Options page opened in a new tab.";
+    }
   });
+}
+
+function createFloatingSettingsButton() {
+  if (document.getElementById(FLOATING_SETTINGS_ID)) {
+    return;
+  }
+  
+  const button = document.createElement("button");
+  button.id = FLOATING_SETTINGS_ID;
+  button.title = "YouTube Reasoner Settings";
+  button.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"></circle>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+    </svg>
+  `;
+  
+  button.addEventListener("click", () => {
+    openOptionsPage(null);
+  });
+  
+  document.body.appendChild(button);
 }
 
 function getBlockedUntil() {

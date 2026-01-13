@@ -1,5 +1,5 @@
 {
-  "manifest_version": 3,
+  "manifest_version": 2,
   "name": "YouTube Reasoner",
   "description": "Challenges whether or not you REALLY need to watch YouTube",
   "version": "0.9.0",
@@ -8,11 +8,11 @@
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
   },
-  "permissions": ["storage"],
-  "host_permissions": [
+  "permissions": [
+    "storage",
     "https://generativelanguage.googleapis.com/*",
-    "https://ai.hackclub.com/*",
-    "*://*.youtube.com/*"
+    "*://*.youtube.com/*",
+    "https://ai.hackclub.com/*"
   ],
   "content_scripts": [
     {
@@ -23,8 +23,16 @@
     }
   ],
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "scripts": ["background.js"]
   },
-  "options_page": "options.html"
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "youtube-reasoner@will10145.github.io",
+      "strict_min_version": "91.0"
+    }
+  }
 }
